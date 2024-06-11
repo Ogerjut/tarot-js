@@ -1,0 +1,38 @@
+/* modifier style css des éléments créer
+ dans script en utilant classList.add(e) (js) 
+ et en l'appelnt ici : e.classList {} (css) */
+
+#tableJeu {
+    display : block;
+}
+
+#enchere {
+    background: crimson;
+    height: 50px;
+    align-content: center;
+}
+#btnEnchere {
+    background: cornflowerblue;
+    ;
+
+}
+
+#zonePli {
+    display: none;
+}
+
+.player {
+    /* position: relative; */
+    height: 400px;
+    width: 150px;
+    border-color: lightslategrey;
+    border-width: medium;
+    border-style:groove;
+}
+.labelPlayer {
+    color: darkolivegreen;
+}
+
+#mainContainer {
+    display: flex ;
+}
