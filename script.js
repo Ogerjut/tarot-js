@@ -22,9 +22,9 @@ function startGame(){
     nbJoueurs = 4
     listeJoueurs = loadPlayers(nbJoueurs)
     deckCards = createDeck()
-    console.log("Before shuffle:", JSON.parse(JSON.stringify(deckCards)))
+    console.log("Before shuffle:", deckCards.map(card => card.value + " " + card.color))
     deckCards = shuffleDeck(deckCards)
-    console.log("After shuffle:", deckCards)
+    console.log("After shuffle:", deckCards.map(card => card.value + " " + card.color))
     chien = dealCards(deckCards, listeJoueurs)
     console.log("Chien:", chien)
 
@@ -32,18 +32,20 @@ function startGame(){
     startEnchere(listeJoueurs)
 
 }
+
 function createDeck(){
     let deck = []
-    for (let c = 0; c < colors.length; c++){
-        for (let i = 0; i < 14; i++ ){
-            deck.push(new Card(i+1, colors[c])) 
-        }
-    }
-    for (let i = 0; i <= 21; i++ ){
-        deck.push(new Card(i, "Atout"))          
-    }   
+   colors.forEach(color => {
+         values.forEach(value => {
+              deck.push(new Card(value, color))
+         })
+    })
+    valuesAtout.forEach(value => {
+        deck.push(new Card(value, "Atout"))
+    })
     return deck
 }
+
 function loadPlayers(nb){
     const players = []
     for (let i = 0; i < nb; i++){
@@ -51,23 +53,23 @@ function loadPlayers(nb){
     }
     return players
 }
-function shuffleDeck(deck){
-    for (let i = deck.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [deck[i], deck[j]] = [deck[j], deck[i]]
-    }
-    return deck
-}
+
+const shuffleDeck = (deck) => deck.sort(() => Math.random() - 0.5)
+
 function dealCards(deck){
     while (deck.length != 6){
-       for (let p = 0 ; p < listeJoueurs.length;p++ ){
+       /* for (let p = 0 ; p < listeJoueurs.length;p++ ){
             listeJoueurs[p].hand.push(deck[0], deck[1], deck[2])
             deck.splice(0,3)
-        } 
+        }  */
+        listeJoueurs.forEach(joueur => {
+            joueur.hand.push(...deck.splice(0,3))
+        })
     }
     console.log("Cards dealed")
     return deck
 }
+
 function sortHandCard(plyrHand){
     colors.push("Atout")
     plyrHand.sort(sortingFunction)
@@ -97,25 +99,27 @@ function getElement(){
 
 // function pour afficher main player et clic sur une carte
 function setZonePlayer(){
-    for (let i = 0; i < listeJoueurs.length; i++){
-        listeJoueurs[i].hand = sortHandCard(listeJoueurs[i].hand) 
+    listeJoueurs.forEach(joueur => {
+        joueur.hand = sortHandCard(joueur.hand) 
         zonePlayer = document.createElement("div")
         playerElement = document.createElement("label")
-        playerElement.textContent = listeJoueurs[i].name
+        playerElement.textContent = joueur.name
         playerElement.classList.add("labelPlayer")
-        zonePlayer.setAttribute("id", listeJoueurs[i].name)
+        zonePlayer.setAttribute("id", joueur.name)
         zonePlayer.classList.add("player")
         zonePlayer.appendChild(playerElement)
         baliseMain.appendChild(zonePlayer)
         zoneCards = document.createElement("ul")
-        zonePlayer.appendChild(zoneCards) 
-        for (let j =0; j < listeJoueurs[i].hand.length; j++){
+        zonePlayer.appendChild(zoneCards)
+
+        joueur.hand.forEach(card => {
+
             cardElement = document.createElement("li")
             cardAnchor = document.createElement("a")
             cardElement.appendChild(cardAnchor)
 
-            textval = listeJoueurs[i].hand[j].value
-            textcol =  listeJoueurs[i].hand[j].color
+            textval = card.value
+            textcol =  card.color
             cardElement.textContent = `${textval} ${textcol}`
 
             if (textcol === "Coeur" || textcol === "Carreau" ){
@@ -127,10 +131,10 @@ function setZonePlayer(){
 
             zoneCards.appendChild(cardElement)
             
-        }
+        })
         
 
-    }
+    })
     
 }
 // ______________________________________________________
@@ -146,31 +150,27 @@ function setBet(bet, joueur){
     // console.log("Dicbets :", dicBets)
 
     let turn = 0
-    for (i=0; i < listeJoueurs.length; i++){
-        if (listeJoueurs[i].hasBet){
+    listeJoueurs.forEach(joueur => {
+        if (joueur.hasBet){
             turn +=1
         }
-    } 
+    })
     if (turn === 4){
         endEnchere(dicBets)
     }
     else {
         joueur = changeTurn(joueur, listeJoueurs)
         setUpEnchere(joueur)
-} 
+    } 
     
 }
 function endEnchere(dic){
     let max = 0
-    for ([key, value] of dic){
-        if (max < value){
-            max = value
-        }
-    }
+    dic.forEach((value, key) => max = Math.max(max, value))
+
     if (max == 0){
         cleanBtnsEncheres()
         startEnchere(listeJoueurs)
-        
     }
     else {
         for ([key, value] of dic){
@@ -208,15 +208,15 @@ function setUpEnchere(speaker){
             })
         }  
     }
-//     let buttons = document.querySelectorAll("button")
-//         console.log(buttons)
+    
 }
-function cleanBtnsEncheres(){
-    let buttons = document.querySelectorAll("button")
-    for (let i=0 ; i <buttons.length; i++){
-        buttons[i].parentElement.removeChild(buttons[i])
-    }
-}
+const cleanBtnsEncheres = () =>
+    document
+        .querySelectorAll("button")
+        .forEach(button => {
+            button.remove()
+        })
+
 function changeTurn(joueur, joueurs){
     cleanBtnsEncheres()
     ind = joueurs.indexOf(joueur)
@@ -250,8 +250,8 @@ function setUpManche(){
 // ______________________________________________________
 // _________________INITIALISATION JEU___________________
 let colors = ["Pique", "Carreau", "Trêfle", "Coeur"]
-const values = [1,2,3,4,5,6,7,8,9,10,11,12,13,14]
-const valuesAtout = [0, 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21]
+const values = Array(14).fill().map((_, i) => i+1)
+const valuesAtout = Array(22).fill().map((_, i) => i)
 
 startGame()
 
