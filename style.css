@@ -1,38 +1,57 @@
 /* modifier style css des éléments créer
  dans script en utilant classList.add(e) (js) 
  et en l'appelnt ici : e.classList {} (css) */
-
+#gameArea {
+    display: flex;
+    align-items: center;
+}
 #tableJeu {
     display : block;
 }
 
-#enchere {
-    background: crimson;
-    height: 50px;
-    align-content: center;
-}
 #btnEnchere {
     background: cornflowerblue;
     ;
 
 }
-
-#zonePli {
+.chien {
+    height: 200px;
+    width:  125px;
+    background-color: rgb(118, 148, 88);
+}
+.zonePli {
     display: none;
+    height: 100px;
+    width: 200px;
 }
 
 .player {
     /* position: relative; */
-    height: 400px;
-    width: 150px;
-    border-color: lightslategrey;
+    height: 420px;
+    width: 90px;
+    border-color: rgb(48, 67, 85);
     border-width: medium;
     border-style:groove;
+    margin: 1px;
+    padding-left: 10px
+    
+   ;
 }
 .labelPlayer {
     color: darkolivegreen;
 }
-
+.cardElement {
+    width: 80px;
+    
+}
 #mainContainer {
     display: flex ;
+}
+
+#playerContainer {
+    display: flex ;
+}
+
+#infoContainer {
+    display: block;
 }
