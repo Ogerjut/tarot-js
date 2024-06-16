@@ -1,8 +1,9 @@
 // faire les getlemeentId querySlector à l'initiation du jeu pour les avoir
 // dans  toutes les fonctions ; idem const
-// function sjuffle a revoir
+// 
 // provlème quand joueur doit couper, NA value> gagne au lieu atout
-// afficher info (score att)
+// afficher info (score att + contrat) + score fin de manche puis fin de partie
+// proposer de rejouer + mode 5 joueurs (appel roi)
 // ---------------------GAME--------------------------
 class Card {
     constructor(val, clr){
@@ -16,24 +17,37 @@ class Player {
         this.hand = []
         this.hasBet = false
         this.hasTaken = false
-        this.roundWon = false
+        // this.roundWon = false
         this.pliWon = []
     }
 }
 
-function startGame(){
-    nbJoueurs = 4
-    listeJoueurs = loadPlayers(nbJoueurs)
+function setNbPlayer(){
+    let nMax = 5
+    for (let i = 4 ; i<=nMax; i++){
+        radioButton  = document.createElement("input")
+        radioButton.setAttribute("type", "radio")
+        radioButton.setAttribute("value",`${i}`)
+        label= document.createTextNode(`${i} joueurs`)
+        radioButton.addEventListener("change", (event)=> {
+            startGame(event.target.value)
+        })
+        setNbPlayersElement.appendChild(label)
+        setNbPlayersElement.appendChild(radioButton)
+    }
+    baliseMain.appendChild(setNbPlayersElement)
+}
+function startGame(nbplayer){
+    listeJoueurs = loadPlayers(nbplayer)
     deckCards = createDeck()
-    console.log("Before shuffle:", JSON.parse(JSON.stringify(deckCards)))
+    // console.log("Before shuffle:", JSON.parse(JSON.stringify(deckCards)))
     deckCards = shuffleDeck(deckCards)
     console.log("After shuffle:", deckCards)
     chien = dealCards(deckCards, listeJoueurs)
     console.log("Chien:", chien)
-
+    baliseMain.removeChild(setNbPlayersElement)
     setZonePlayer()
-    startEnchere(listeJoueurs)
-
+    startEnchere(listeJoueurs) 
 }
 function createDeck(){
     let deck = []
@@ -54,15 +68,26 @@ function loadPlayers(nb){
     }
     return players
 }
-const shuffleDeck = (deck) => deck.sort(() => Math.random() - 0.5)
-
+function shuffleDeck(deck){
+    for (let i = deck.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [deck[i], deck[j]] = [deck[j], deck[i]]
+    }
+    return deck
+}
 function dealCards(deck){
-    while (deck.length != 6){
+    let nbCardsChien 
+    if (listeJoueurs.length === 4 ){
+        nbCardsChien = 6
+    } else {
+        nbCardsChien = 3
+    }
+    while (deck.length > nbCardsChien ){
        listeJoueurs.forEach(player => {
             player.hand.push(...deck.splice(0,3))
         }) 
     }
-    console.log("Cards dealed")
+    console.log("Cards dealt")
     return deck
 }
 function sortHandCard(plyrHand){
@@ -130,8 +155,8 @@ function getHasTaken(){
 // ______________________________________________________
 // ------------------ENCHERES----------------------------
 function setBet(bet, joueur){
-    console.log(joueur.name)
-    console.log(joueur.hand)
+    // console.log(joueur.name)
+    // console.log(joueur.hand)
     joueur.hasBet = true
     dicBets.set(joueur, bet)
     if (bet > actualBet){
@@ -278,7 +303,7 @@ function SetupChien(val){
     
     
     } else {
-        console.log("Pas de chien à faire")
+        console.log("GC : Pas de chien à faire")
         settingChien = false
         startManche()
     }
@@ -354,7 +379,7 @@ function onClickedCard(card){
         if (p.hand.includes(card) && newChien.length < 6){
             newChien.push(card)
             p.hand = p.hand.filter((c)=>c !== card)
-            updateHandPlayer(p.hand)
+            updateHandPlayer()
             cleanBtnsChien()
             SetupChien(actualBet)
             setZonePlayer()
@@ -363,16 +388,16 @@ function onClickedCard(card){
     }
     if (isPlaying && speaker.hand.includes(card)){
         if (checkPossibleCards(card)){
-            console.log(card.value, card.color)
+            // console.log(card.value, card.color)
             pli.set(speaker, card)
             speaker.hand = speaker.hand.filter((c)=>c !== card)
-            updateHandPlayer()
             updateZonePli(card)
-
             if (pli.size === 4 ){
                 speaker = winnerTurn(pli)
                 if (speaker.hand.length === 0){
                     console.log("fin de manche")
+                    // compter les points
+                    computePointsRound()
                     restartManche()
                 } else {
                     restartRound()
@@ -380,6 +405,7 @@ function onClickedCard(card){
             } else {
                 speaker = changeTurn(speaker, listeJoueurs)   
             }
+        updateHandPlayer()
         setZonePlayer()
         updateInfo()
         setupInfo(speaker)
@@ -391,8 +417,11 @@ function checkPossibleCards(cardSpeaker) {
     let possibleCards = [];
 
     if (!colorPli) {
-        colorPli = cardSpeaker.color
-        possibleCards = speaker.hand.slice();
+        if (cardSpeaker.value !== 0){
+            colorPli = cardSpeaker.color
+            possibleCards = speaker.hand.slice();
+        
+        }
         
     } else {
         if (colorPli === "Atout" && cardSpeaker.value !== 0) {
@@ -432,7 +461,6 @@ function checkPossibleCards(cardSpeaker) {
         }
         return true;
     }
-    else {return false}
 }
 function updateZonePli(card){
     textval = card.value
@@ -461,7 +489,7 @@ function winnerTurn(dic){
 
     for (const [plyr, c] of dic) {
         if (c.value === max){
-            plyr.roundWon = true
+            // plyr.roundWon = true
             console.log(plyr.name, "a gagné le pli")
             dic.forEach(card => {
                 plyr.pliWon.push(card)
@@ -481,26 +509,87 @@ function restartRound(){
     zonePli.remove()
     setUpManche()
 }
-function endRound(){
-    nbRound += 1
-    if (nbRound === nbRoundMax){
-        endGame()
-    } else {
-        startManche()
-    }
-}
 function endGame(){
     console.log("fin du jeu")
+    // compte final, 
 }
 function restartManche(){
-    ind = listeJoueurs.indexOf(speaker)
-    listeJoueurs = listeJoueurs.slice(ind).concat(listeJoueurs.slice(0, ind))
+    nbRound += 1
     pli.clear()
     colorPli = undefined
     listAtout = []
     zonePli.remove()
-    // redistribuer cartes
-    startEnchere(listeJoueurs)
+    if (nbRound > nbRoundMax){
+        nbRound = 0
+        endGame() 
+    } else { 
+        deckCards = createDeck()
+        deckCards = shuffleDeck(deckCards)
+        chien = dealCards(deckCards, listeJoueurs)
+        console.log("Chien:", chien)
+        startEnchere(listeJoueurs)
+    }
+}
+function computePointsRound(){
+    console.log("compte points round")
+    listeJoueurs.forEach(player =>{
+        if (player.hasTaken && actualBet < 4)
+            newChien.forEach(card => {
+                player.pliWon.push(card)
+                console.log("chien ajouté au pli")
+            })
+            player.score = computePoints(player).score
+            player.nbBout = computePoints(player).nbBout 
+            console.log(player.name, "a marqué ", player.score, "(bouts :", player.nbBout, ")")   
+            player.pliWon = []
+            if (player.hasTaken){
+                switch (player.nbBout){
+                    case 0 : player.contrat = 56
+                    case 1 : player.contrat = 51
+                    case 2 : player.contrat = 41
+                    case 3 : player.contrat = 36
+                }
+                if (player.contrat === player.score){
+                    console.log(player.name, "a juste gagné le tour")
+                }
+                if (player.contrat < player.score){
+                    console.log(player.name, "a gagné le tour")
+                }
+                if (player.contrat > player.score){
+                    console.log(player.name, "a chuté")
+                }
+            }
+    })
+}
+function computePoints(player){
+    let nbBout = 0
+    let score = 0
+    player.pliWon.forEach(card => {
+        let pts = 0
+        if (card.color === "Atout"){
+            if (card.value === 21 || card.value === 1 || card.value === 0){
+                nbBout+=1
+                pts = 4.5
+            } else {
+                pts = 0.5
+            }
+        } else {
+            switch (card.value){
+                case 11 :
+                case 12 :
+                case 13 :
+                case 14 : 
+                    pts = card.value - 9.5
+                    break
+                default : 
+                pts = 0.5
+                break
+            }
+        }
+        score += pts
+    })
+    
+    return {score, nbBout }   
 }
 // ______________________________________________________
 // -------------------- INFO JEU ------------------------
@@ -528,11 +617,22 @@ function updateInfo(){
         baliseInfo.removeChild(baliseInfo.firstChild)
     }
 }
+// ___________________INIT ELEMENT HTML_____________
+
+// table = document.getElementById("tableJeu")
+let baliseMain = document.getElementById("mainContainer")
+let balisePlayer = document.getElementById("playerContainer")
+let baliseInfo = document.getElementById("infoContainer")
+let zonePli = document.getElementById("zonePli")
+let enchereElement = document.createElement("div")
+let setNbPlayersElement = document.createElement("div")
+
 // ______________________________________________________
 // _________________INITIALISATION JEU___________________
 let colors = ["Pique", "Carreau", "Trêfle", "Coeur"]
 const values = Array(14).fill().map((_, i) => i+1)
 const valuesAtout = Array(22).fill().map((_, i) => i)
+let chien = []
 let newChien = []
 let settingChien = false 
 let isPlaying = false
@@ -542,14 +642,8 @@ let listAtout = []
 let nbRoundMax = 3
 let nbRound = 1
 
-// ___________________INIT ELEMENT HTML_____________
+let listeJoueurs = []
+let deckCards = []
 
-// table = document.getElementById("tableJeu")
-let baliseMain = document.getElementById("mainContainer")
-let balisePlayer = document.getElementById("playerContainer")
-let baliseInfo = document.getElementById("infoContainer")
-let zonePli = document.getElementById("zonePli")
-// let enchereElement = document.createElement("div")
-
-
-
+setNbPlayer()
+// startGame(4)
